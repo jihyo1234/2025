@@ -5,24 +5,43 @@ import streamlit as st
 # ===============================
 st.set_page_config(page_title="🐶 강아지 행동 설명 앱", page_icon="🐾", layout="wide")
 st.title("🐶 강아지 행동 설명 앱")
-st.write("강아지가 어떤 행동을 하는지 선택하면 의미와 대처법을 알려드려요! 기록된 행동을 바탕으로 맞춤 피드백도 제공합니다 📝")
+st.write("강아지가 어떤 행동을 하는지 선택하면 의미와 대처법을 알려드려요! 기록된 행동과 프로필을 바탕으로 맞춤 피드백도 제공합니다 📝")
 
 # ===============================
-# 강아지 기본 정보 입력
+# 강아지 프로필 입력 섹션
 # ===============================
-st.sidebar.header("📋 강아지 정보 입력")
+st.sidebar.header("📋 강아지 프로필")
 
-dog_name = st.sidebar.text_input("🐕 이름", value="우리 강아지")
-dog_age = st.sidebar.number_input("🎂 나이(살)", min_value=0, max_value=30, value=2)
-dog_breed = st.sidebar.text_input("🐾 견종", value="믹스견")
-dog_gender = st.sidebar.radio("⚧ 성별", ["수컷", "암컷", "모름"])
+# 프로필 입력 폼
+with st.sidebar.form("dog_profile_form"):
+    dog_name = st.text_input("🐕 이름", value="우리 강아지")
+    dog_age = st.number_input("🎂 나이(살)", min_value=0, max_value=30, value=2)
+    dog_breed = st.text_input("🐾 견종", value="믹스견")
+    dog_gender = st.radio("⚧ 성별", ["수컷", "암컷", "모름"])
+    dog_personality = st.text_area("💡 특징 / 성격", placeholder="예: 활발해요, 낯을 가려요, 사람을 좋아해요 등")
 
-st.sidebar.markdown("---")
-st.sidebar.write(f"**입력된 정보 요약**")
-st.sidebar.write(f"🐶 이름: {dog_name}")
-st.sidebar.write(f"🎂 나이: {dog_age}살")
-st.sidebar.write(f"🐾 견종: {dog_breed}")
-st.sidebar.write(f"⚧ 성별: {dog_gender}")
+    submitted = st.form_submit_button("📌 프로필 저장")
+
+# 저장된 프로필을 세션에 유지
+if "profile" not in st.session_state:
+    st.session_state.profile = {}
+
+if submitted:
+    st.session_state.profile = {
+        "이름": dog_name,
+        "나이": f"{dog_age}살",
+        "견종": dog_breed,
+        "성별": dog_gender,
+        "특징": dog_personality
+    }
+    st.success("✅ 프로필이 저장되었습니다!")
+
+# 저장된 프로필 출력
+if st.session_state.profile:
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("🐶 현재 프로필")
+    for key, value in st.session_state.profile.items():
+        st.sidebar.write(f"**{key}:** {value}")
 
 # ===============================
 # 행동 데이터 (카테고리별 + 이모지 포함)
@@ -104,7 +123,10 @@ if behavior:
 # ===============================
 if "history" in st.session_state and st.session_state.history:
     st.markdown("---")
-    st.subheader(f"📊 {dog_name}의 오늘 기록된 행동")
+    if st.session_state.profile:
+        st.subheader(f"📊 {st.session_state.profile['이름']}의 오늘 기록된 행동")
+    else:
+        st.subheader("📊 오늘 기록된 행동")
 
     positive = sum(1 for h in st.session_state.history if h["긍정"])
     negative = len(st.session_state.history) - positive
@@ -117,9 +139,9 @@ if "history" in st.session_state and st.session_state.history:
 
     # 스트레스 지수 결과
     if negative > positive:
-        st.error(f"😟 {dog_name}의 스트레스 지수가 높아요. 강아지를 안정시켜 주세요!")
+        st.error("😟 스트레스 지수가 높아요. 강아지를 안정시켜 주세요!")
     else:
-        st.success(f"🥰 {dog_name}가 행복한 하루를 보내고 있어요!")
+        st.success("🥰 행복한 하루를 보내고 있어요!")
 
     # ===============================
     # 맞춤 피드백 기능
